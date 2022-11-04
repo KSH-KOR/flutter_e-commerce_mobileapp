@@ -25,6 +25,7 @@ class AddNewProductView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final productProvider = Provider.of<ProductProvider>(context, listen: true);
     
     return SafeArea(
       child: Scaffold(
@@ -32,7 +33,7 @@ class AddNewProductView extends StatelessWidget {
           leading: TextButton(
             child: const Text("Cancel", style: TextStyle(color: Colors.black),),
             onPressed: () {
-              
+              productProvider.imagePath = null;
               Navigator.of(context).pop();
             },
           ),
@@ -41,19 +42,20 @@ class AddNewProductView extends StatelessWidget {
               onPressed: () {
                 final imagePath = Provider.of<ProductProvider>(context, listen: false).imagePath;
                 final serverTime = FieldValue.serverTimestamp();
+                final productId = const Uuid().v4();
                 productService.createNewProduct(
                   imagePath: imagePath,
                   name: productName.text,
-                  price: price.text,
+                  price: int.parse(price.text,),
                   description: description.text,
                   createdTime: serverTime,
                   modifiedTime: serverTime,
                   creatorId: authProvider.currentUser!.id,
-                  productId: const Uuid().v4(),
+                  productId: productId,
                   likeCount: 0,
                 );
                 if(imagePath != null){
-                  productService.uploadFileToCloud(imagePath, "images");
+                  productService.uploadFileToCloud(imagePath, productId);
                   Provider.of<ProductProvider>(context, listen: false).imagePath = null;
                 }
                 Navigator.of(context).pop();
@@ -70,7 +72,20 @@ class AddNewProductView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const ImageSelector(),
+              SizedBox(
+              height: 300,
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                child: productProvider.selectedImage ?? productProvider.defaultImage,
+                
+              ),
+            ),
+            Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: const [
+                      ImageSelector(),
+                    ],
+                  ),
               TextField(
                 controller: productName,
               ),

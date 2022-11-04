@@ -12,6 +12,7 @@ class FirebaseCloudAuthStorage {
     required String? email,
     required String? name,
     required String? statusMessage,
+    required String? photoURL,
     required String uid,
   }) async {
     final document = await users.doc(uid).set({
@@ -19,6 +20,7 @@ class FirebaseCloudAuthStorage {
       userNameFieldName: name,
       statusMessageFieldName: statusMessage,
       userIdFieldName: uid,
+      userProfileURLFieldName: photoURL,
     });
   }
 
@@ -57,6 +59,7 @@ class FirebaseCloudAuthStorage {
           if (!docSnapshot.exists)
             {
               await createNewUser(
+                photoURL: user.photoURL,
                 email: user.email,
                 name: user.name,
                 statusMessage: user.statusMessage,

@@ -13,9 +13,7 @@ class FirebaseCloudProdcutStorage {
 
   Stream<Iterable<Product>> allProducts({bool isDescending = true}) {
     final allProducts = products
-        .orderBy(productPriceFieldName, descending: isDescending)
-        .where(productIdFieldName)
-        .snapshots()
+        .orderBy(productPriceFieldName, descending: isDescending).snapshots()
         .map((event) => event.docs.map((doc) => Product.fromSnapshot(doc)));
     return allProducts;
   }
@@ -23,7 +21,7 @@ class FirebaseCloudProdcutStorage {
   Future<void> createNewProduct({
     String? imagePath,
     required String name,
-    required String price,
+    required int price,
     required String description,
     required int likeCount,
     required String creatorId,
@@ -44,19 +42,6 @@ class FirebaseCloudProdcutStorage {
     });
     final fetchedProduct = await document.get();
     log("created");
-    /*
-    return Product(
-      imagePath: imagePath,
-      name: name,
-      price: price,
-      description: description,
-      likeCount: likeCount,
-      creatorId: creatorId,
-      productId: productId,
-      createdTime: createdTime,
-      modifiedTime: modifiedTime,
-      docId: fetchedProduct.id,
-    );*/
   }
 
   void deleteProduct({required String docId}){
@@ -66,10 +51,10 @@ class FirebaseCloudProdcutStorage {
   Future<void> fetch({
     String? imagePath,
     String? name,
-    String? price,
+    int? price,
     String? description,
     int? likeCount,
-    String? modifiedTime,
+    FieldValue? modifiedTime,
 
     required String productId,
     required String docId,
@@ -91,8 +76,39 @@ class FirebaseCloudProdcutStorage {
     final file = File(path);
     try {
       await targetRef.putFile(file);
+      log("file uploaded on firecloud in this name $subRef");
     } on FirebaseException catch (e) {
       log("cannot uploaded error msg:${e.code}");
+    }
+  }
+
+  Future<void> deleteFileOnCloud(String? subRef) async {
+    final targetRef = subRef == null ? storageRef : storageRef.child(subRef);
+    try {
+      await targetRef.delete();
+      log("file deleted on firecloud: $subRef");
+    } on FirebaseException catch (e) {
+      log("cannot delete error msg:${e.code}");
+    }
+  }
+
+  Future<void> updateFileToCloud(String path, String? subRef) async {
+    final targetRef = subRef == null ? storageRef : storageRef.child(subRef);
+    final file = File(path);
+    try {
+      await targetRef.delete();
+      await targetRef.putFile(file);
+      log("file updated on firecloud in this name $subRef");
+    } on FirebaseException catch (e) {
+      switch(e.code){
+        case "object-not-found":
+          await targetRef.putFile(file);
+          log("file coudn't find. So file created on firecloud in this name $subRef");
+          break;
+        default:
+          log("cannot updated error msg:${e.code}");
+      }
+      
     }
   }
 }

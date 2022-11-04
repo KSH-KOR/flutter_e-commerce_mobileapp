@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -13,8 +14,21 @@ class ProductProvider extends ChangeNotifier{
   final firebaseCloudProdcutStorage = FirebaseCloudProdcutStorage();
   final List<Product> _productList = [];
   final List<Product> _favoriteList = [];
+  final Set<Product> _wishList = {};
   List<Product> get allProducts => _productList;
   List<Product> get favoritedProducts => _favoriteList;
+  Set<Product> get wishList => _wishList;
+
+  Product? _currentProduct;
+  Product? get currentProduct => _currentProduct;
+  set currentProduct(Product? product){
+    _currentProduct = product;
+    notifyListeners();
+  }
+  void resetCurrentProduct(){
+    currentProduct = null;
+    notifyListeners();
+  }
 
   String? _imagePath;
   String? get imagePath => _imagePath;
@@ -57,7 +71,9 @@ class ProductProvider extends ChangeNotifier{
   void deleteProduct(Product product){
     _productList.remove(product);
     firebaseCloudProdcutStorage.deleteProduct(docId: product.docId);
+    firebaseCloudProdcutStorage.deleteFileOnCloud(product.productId);
     notifyListeners();
+    log("product deleted id: ${product.productId}");
   }
 
   void favoriteProduct(Product product){
@@ -73,5 +89,21 @@ class ProductProvider extends ChangeNotifier{
     notifyListeners();
   }
 
+  void toggleWishList({Product? product}){
+    isInWishList(product: product) ? removeProductFromWishList(product: product) : addProductInWishList(product: product);
+  }
 
+  void addProductInWishList({Product? product}){
+    wishList.add(product ?? currentProduct!);
+    notifyListeners();
+  }
+
+  void removeProductFromWishList({Product? product}){
+    wishList.removeWhere((element) => element.productId == (product == null ? currentProduct!.productId : product.productId));
+    notifyListeners();
+  }
+
+  bool isInWishList({Product? product}){
+    return wishList.map((e) => e.productId).toList().contains(product == null ? currentProduct!.productId : product.productId);
+  }
 }

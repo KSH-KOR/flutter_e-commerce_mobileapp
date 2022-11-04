@@ -15,6 +15,20 @@ class AuthProvider extends ChangeNotifier{
   final firebaseCloudAuthStorage = FirebaseCloudAuthStorage();
   final googleSignIn = GoogleSignIn();
 
+  final String _defaultImageURL = "https://handong.edu/site/handong/res/img/logo.png";
+  String get defaultImageURL => _defaultImageURL;
+
+  Image getProfileImage(){
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final String? url = AuthUser.fromFirebase(user).photoURL;
+      return Image.network(url ?? defaultImageURL);
+    } else {
+      log("someting went wrong. could not find auth");
+      return Image.network(defaultImageURL);
+    }
+  }
+
   AuthUser? get currentUser {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {

@@ -23,36 +23,51 @@ class GridViewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
-    final Image image = product.selectedImaged() ?? productProvider.defaultImage;
-    
-    return Card(
-      elevation: 3,
-      clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.all(10),
-      child: Column(
+    final productProvider = Provider.of<ProductProvider>(context, listen: true);
+    final Image image =
+        product.selectedImaged() ?? productProvider.defaultImage;
+
+    return InkWell(
+      onDoubleTap: () => productProvider.toggleWishList(product: product),
+      child: Stack(
         children: [
-          _image(image: image),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+          Card(
+            elevation: 3,
+            clipBehavior: Clip.antiAlias,
+            margin: const EdgeInsets.all(10),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(product.name),
-                Text("\$ ${product.price}"),
-                  Row(
-                    children: [
-                      TextButton(
-                        onPressed: (){
-                          Navigator.of(context).pushNamed(detailRoute, arguments: product);
-                        },
-                        child: const Text("more"),
-                      ),
-                    ],
-                  ),
-              ]
-              ),
+                _image(image: image),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(product.name),
+                        Text("\$ ${product.price}"),
+                        Row(
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                productProvider.currentProduct = product;
+                                Navigator.of(context).pushNamed(detailRoute);
+                              },
+                              child: const Text("more"),
+                            ),
+                          ],
+                        ),
+                      ]),
+                ),
+              ],
+            ),
+          ),
+          Align(
+            alignment: Alignment.topRight,
+            child: Visibility(
+              visible: productProvider.isInWishList(product: product),
+              child: const Icon(Icons.check_circle, color: Colors.green,),
+            ),
           ),
         ],
       ),

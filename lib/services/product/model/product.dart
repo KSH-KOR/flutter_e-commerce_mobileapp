@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 class Product {
   
    String name;
-   String price;
+   int price;
    String description;
   int likeCount;
   final String creatorId;

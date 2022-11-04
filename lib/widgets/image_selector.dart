@@ -29,12 +29,12 @@ class ImageSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final productProvider =
         Provider.of<ProductProvider>(context, listen: true);
-    return InkWell(
-      onTap: () async {
+    return IconButton(
+      onPressed: () async {
         final pickedFilePath = pickImage();
         productProvider.imagePath = await pickedFilePath;
       },
-      child: productProvider.imagePath == null ? productProvider.defaultImage : productProvider.selectedImage,
+      icon:  const Icon(Icons.photo),
     );
   }
 }
