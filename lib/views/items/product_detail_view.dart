@@ -60,27 +60,28 @@ class DetailView extends StatelessWidget {
             Visibility(
               visible: productProvider.isEditing,
               child: TextButton(
-                onPressed: () {
+                onPressed: () async {
                   final imagePath =
                       Provider.of<ProductProvider>(context, listen: false)
                           .imagePath;
                   final serverTime = FieldValue.serverTimestamp();
-                  productService.fetch(
-                    imagePath: imagePath,
-                    name: productNameTEC.text,
-                    price: int.parse(productPriceTEC.text),
-                    description: productDescriptionTEC.text,
-                    modifiedTime: serverTime,
-                    docId: product.docId,
-                    productId: product.productId,
-                    likeCount: 0,
-                  );
                   if (imagePath != null) {
-                    productService.updateFileToCloud(
+                    await productService.updateFileToCloud(
                         imagePath, product.productId);
                     Provider.of<ProductProvider>(context, listen: false)
                         .imagePath = null;
                   }
+                  final imageDownloadURL = await productService.getImageDownloadURL(cloudRef: product.productId);
+                  await productService.fetch(
+                    imagePath: imageDownloadURL,
+                    name: productNameTEC.text.isEmpty ? null : productNameTEC.text,
+                    price: productPriceTEC.text.isEmpty ? null : int.parse(productPriceTEC.text),
+                    description: productDescriptionTEC.text.isEmpty ? null : productDescriptionTEC.text,
+                    modifiedTime: serverTime,
+                    docId: product.docId,
+                    productId: product.productId,
+                    likeCount: product.likeCount,
+                  );
                   productProvider.toggleEditingMode();
                   Navigator.of(context).pop();
                 },

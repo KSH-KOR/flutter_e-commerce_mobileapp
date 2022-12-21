@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finalterm/services/product/model/product.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/cupertino.dart';
 
 import 'constants/product_field_name.dart';
 
@@ -69,13 +70,15 @@ class FirebaseCloudProdcutStorage {
         likedFieldName: likeCount ?? product[likedFieldName],
         modifiedTimeFieldName: modifiedTime ?? product[modifiedTimeFieldName],
       });
+    log("product cloud succefully fetched");
   }
 
   Future<void> uploadFileToCloud(String path, String? subRef) async {
     final targetRef = subRef == null ? storageRef : storageRef.child(subRef);
     final file = File(path);
     try {
-      await targetRef.putFile(file);
+      final uploadTask = targetRef.putFile(file);
+      await uploadTask;
       log("file uploaded on firecloud in this name $subRef");
     } on FirebaseException catch (e) {
       log("cannot uploaded error msg:${e.code}");
@@ -92,23 +95,40 @@ class FirebaseCloudProdcutStorage {
     }
   }
 
-  Future<void> updateFileToCloud(String path, String? subRef) async {
-    final targetRef = subRef == null ? storageRef : storageRef.child(subRef);
+  Future<void> updateFileToCloud(String path, String? cloudRef) async {
+    final targetRef = cloudRef == null ? storageRef : storageRef.child(cloudRef);
     final file = File(path);
     try {
       await targetRef.delete();
       await targetRef.putFile(file);
-      log("file updated on firecloud in this name $subRef");
+      log("file updated on firecloud in this name $cloudRef");
     } on FirebaseException catch (e) {
       switch(e.code){
         case "object-not-found":
           await targetRef.putFile(file);
-          log("file coudn't find. So file created on firecloud in this name $subRef");
+          log("file coudn't find. So file created on firecloud in this name $cloudRef");
           break;
         default:
           log("cannot updated error msg:${e.code}");
       }
-      
+    }
+  }
+
+  Future<String?> getImageDownloadURL({required String cloudRef}) async {
+    final targetRef = storageRef.child(cloudRef);
+    try{
+      final String downloadLink = await targetRef.getDownloadURL();
+      log("got file download link: $downloadLink");
+      return downloadLink;
+    } on FirebaseException catch (e) {
+      switch(e.code){
+        case "object-not-found":
+          log("file coudn't find in this name: $cloudRef \nfailed to get download link");
+          return null;
+        default:
+          log("cannot updated error msg:${e.code}");
+          return null;
+      }
     }
   }
 }

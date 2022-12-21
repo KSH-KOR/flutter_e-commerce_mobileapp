@@ -45,7 +45,7 @@ class Product {
         docId = snapshot.id;
 
   Image? selectedImaged(){
-    return imagePath != null ? Image.file(File(imagePath!)) : null;
+    return imagePath != null ? Image.network(imagePath!) : null;
   }
 
 }

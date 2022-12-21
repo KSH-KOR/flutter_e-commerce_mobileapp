@@ -1,10 +1,8 @@
-import 'dart:developer';
-import 'dart:io';
+
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finalterm/services/auth/auth_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -26,12 +24,15 @@ class AddNewProductView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final productProvider = Provider.of<ProductProvider>(context, listen: true);
-    
+
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           leading: TextButton(
-            child: const Text("Cancel", style: TextStyle(color: Colors.black),),
+            child: const Text(
+              "Cancel",
+              style: TextStyle(color: Colors.black),
+            ),
             onPressed: () {
               productProvider.imagePath = null;
               Navigator.of(context).pop();
@@ -39,25 +40,35 @@ class AddNewProductView extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                final imagePath = Provider.of<ProductProvider>(context, listen: false).imagePath;
+              onPressed: () async {
+                
+                final imagePath =
+                    Provider.of<ProductProvider>(context, listen: false)
+                        .imagePath;
                 final serverTime = FieldValue.serverTimestamp();
                 final productId = const Uuid().v4();
+                if (imagePath != null) {
+                  await productService.uploadFileToCloud(imagePath, productId);
+                  Provider.of<ProductProvider>(context, listen: false)
+                      .imagePath = null;
+                }
+                final String? imageDownloadURL = await productService.getImageDownloadURL(cloudRef: productId);
                 productService.createNewProduct(
-                  imagePath: imagePath,
-                  name: productName.text,
-                  price: int.parse(price.text,),
-                  description: description.text,
+                  imagePath: imageDownloadURL,
+                  name: productName.text.isEmpty
+                      ? "No Name Yet"
+                      : productName.text,
+                  price: price.text.isEmpty ? 0 : int.parse(price.text),
+                  description: description.text.isEmpty
+                      ? "No Description Yet"
+                      : description.text,
                   createdTime: serverTime,
                   modifiedTime: serverTime,
                   creatorId: authProvider.currentUser!.id,
                   productId: productId,
                   likeCount: 0,
                 );
-                if(imagePath != null){
-                  productService.uploadFileToCloud(imagePath, productId);
-                  Provider.of<ProductProvider>(context, listen: false).imagePath = null;
-                }
+                
                 Navigator.of(context).pop();
               },
               child: const Text(
@@ -73,19 +84,19 @@ class AddNewProductView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
-              height: 300,
-              child: Card(
-                clipBehavior: Clip.antiAlias,
-                child: productProvider.selectedImage ?? productProvider.defaultImage,
-                
+                height: 300,
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: productProvider.selectedImage ??
+                      productProvider.defaultImage,
+                ),
               ),
-            ),
-            Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: const [
-                      ImageSelector(),
-                    ],
-                  ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: const [
+                  ImageSelector(),
+                ],
+              ),
               TextField(
                 controller: productName,
               ),
